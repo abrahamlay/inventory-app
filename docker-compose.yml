@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: inventory-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory123
+      POSTGRES_DB: inventory
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: inventory-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: inventory-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://inventory:inventory123@db:5432/inventory
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: change-this-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery-worker:
+    build: ./backend
+    container_name: inventory-celery-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://inventory:inventory123@db:5432/inventory
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: celery -A app.tasks worker --loglevel=info
+
+  celery-beat:
+    build: ./backend
+    container_name: inventory-celery-beat
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://inventory:inventory123@db:5432/inventory
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: celery -A app.tasks beat --loglevel=info
+
+  nginx:
+    image: nginx:alpine
+    container_name: inventory-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
