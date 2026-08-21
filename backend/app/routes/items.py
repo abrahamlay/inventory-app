@@ -15,7 +15,7 @@ def generate_sku():
     # SKU sederhana: INV-<timestamp unik>
     return f"INV-{uuid.uuid4().hex[:8].upper()}"
 
-@router.post("/", response_model=schemas.ItemOut)
+@router.post("", response_model=schemas.ItemOut)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     # Generate SKU jika tidak disediakan
     sku = item.sku or generate_sku()
@@ -45,7 +45,7 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current
     db.refresh(db_item)
     return db_item
 
-@router.get("/", response_model=List[schemas.ItemOut])
+@router.get("", response_model=List[schemas.ItemOut])
 def list_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = db.query(models.Item).offset(skip).limit(limit).all()
     return items
