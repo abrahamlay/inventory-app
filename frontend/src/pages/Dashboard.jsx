@@ -10,7 +10,7 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch('/api/items?limit=1000', {
+        const res = await fetch(`${import.meta.env.BASE_URL}api/items?limit=1000`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         const items = await res.json()

@@ -55,7 +55,7 @@ export default function Opname() {
     setResult(null)
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/items/qr/${encodeURIComponent(qr)}`, {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/items/qr/${encodeURIComponent(qr)}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) {
@@ -80,7 +80,7 @@ export default function Opname() {
     setError('')
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/stock/opname', {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/stock/opname`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

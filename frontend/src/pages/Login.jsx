@@ -17,7 +17,7 @@ export default function Login({ onLogin }) {
       formData.append('username', username)
       formData.append('password', password)
 
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData

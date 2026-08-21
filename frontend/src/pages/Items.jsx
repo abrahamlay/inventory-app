@@ -11,7 +11,7 @@ export default function Items() {
   const fetchItems = async () => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/items?limit=1000', {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/items?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
@@ -31,7 +31,7 @@ export default function Items() {
     e.preventDefault()
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/items', {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
