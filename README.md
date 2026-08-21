@@ -135,41 +135,7 @@ cat backup.sql | docker compose exec -T db psql -U inventory inventory
 
 #### 2. Build & Jalankan dengan Docker Compose
 
-```bash
-# Dengan docker-compose
-docker-compose up -d --build
-
-# Atau dengan podman-compose
-podman-compose up -d --build
-```
-
-> ⚠️ Jika menggunakan Podman dan ingin menggunakan port 80, pastikan `net.ipv4.ip_unprivileged_port_start=80` di `/etc/sysctl.conf` atau gunakan port lain (misal 8080).
-
-### 3. Buat User Admin (Pertama Kali)
-
-Setelah container berjalan, buat user admin via API:
-
-```bash
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123","full_name":"Administrator","role":"admin"}'
-```
-
-### 4. Login & Dapatkan Token
-
-```bash
-curl -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=admin123"
-```
-
-Simpan `access_token` untuk akses API.
-
-### 5. Akses Aplikasi
-
-- **Backend API**: `http://localhost:8000`
-- **API Docs (Swagger)**: `http://localhost:8000/docs`
-- **Frontend (via Nginx)**: `http://localhost:8080` (jika diaktifkan)
+> ⚠️ Untuk deployment manual tanpa container (jarang diperlukan), backend FastAPI bisa dijalankan langsung dengan `uvicorn` — namun cara yang disarankan adalah docker compose di atas.
 
 ## 📂 Struktur Proyek
 
