@@ -1,99 +1,100 @@
-version: '3.8'
+# Inventory App — docker-compose portabel
+# Bisa dijalankan di VM mana pun yang punya Docker (atau Podman + podman-compose).
+#
+# Konfigurasi via environment / file .env:
+#   BASE_PATH  : URL prefix aplikasi (default: /inventory-app/)
+#   WEB_PORT   : Port host untuk web (default: 8080)
+#   SECRET_KEY : Kunci JWT — WAJIB ganti di produksi
+#
+# Jalankan:  docker compose up -d --build
 
 services:
   db:
-    image: postgres:16-alpine
+    image: docker.io/library/postgres:16-alpine
     container_name: inventory-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: inventory
-      POSTGRES_PASSWORD: inventory123
-      POSTGRES_DB: inventory
+      POSTGRES_USER: ${POSTGRES_USER:-inventory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inventory123}
+      POSTGRES_DB: ${POSTGRES_DB:-inventory}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - inventory_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U inventory"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     container_name: inventory-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   backend:
     build: ./backend
     container_name: inventory-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://inventory:inventory123@db:5432/inventory
+      DATABASE_URL: postgresql://${POSTGRES_USER:-inventory}:${POSTGRES_PASSWORD:-inventory123}@db:5432/${POSTGRES_DB:-inventory}
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: change-this-in-production
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   celery-worker:
     build: ./backend
     container_name: inventory-celery-worker
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://inventory:inventory123@db:5432/inventory
+      DATABASE_URL: postgresql://${POSTGRES_USER:-inventory}:${POSTGRES_PASSWORD:-inventory123}@db:5432/${POSTGRES_DB:-inventory}
       REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+    command: celery -A app.tasks worker --loglevel=info
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-    command: celery -A app.tasks worker --loglevel=info
 
   celery-beat:
     build: ./backend
     container_name: inventory-celery-beat
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://inventory:inventory123@db:5432/inventory
+      DATABASE_URL: postgresql://${POSTGRES_USER:-inventory}:${POSTGRES_PASSWORD:-inventory123}@db:5432/${POSTGRES_DB:-inventory}
       REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+    command: celery -A app.tasks beat --loglevel=info
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-    command: celery -A app.tasks beat --loglevel=info
 
-  nginx:
-    image: nginx:alpine
-    container_name: inventory-nginx
+  web:
+    build:
+      context: ./frontend
+      args:
+        BASE_PATH: ${BASE_PATH:-/inventory-app/}
+    container_name: inventory-web
     restart: unless-stopped
+    environment:
+      BASE_PATH: ${BASE_PATH:-/inventory-app/}
+      BACKEND_URL: http://backend:8000
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./frontend/dist:/usr/share/nginx/html
+      - "${WEB_PORT:-8080}:80"
     depends_on:
       - backend
 
 volumes:
-  postgres_data:
+  inventory_db_data:

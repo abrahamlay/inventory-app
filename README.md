@@ -72,6 +72,67 @@ git clone https://github.com/abrahamlay/inventory-app.git
 cd inventory-app
 ```
 
+#### 2. Konfigurasi (opsional tapi disarankan)
+
+Buat file `.env` dan sesuaikan:
+
+```bash
+cat > .env <<EOF
+BASE_PATH=/inventory-app/
+WEB_PORT=8081
+BACKEND_PORT=8000
+POSTGRES_USER=inventory
+POSTGRES_PASSWORD=***
+POSTGRES_DB=inventory
+SECRET_KEY=*** rand -hex 32)
+EOF
+```
+
+> ⚠️ **Ganti `SECRET_KEY` dan password database di produksi!**
+
+#### 3. Build & Jalankan
+
+```bash
+docker compose up -d --build
+# atau dengan podman:
+podman-compose up -d --build
+```
+
+Akses di `http://localhost:8081/inventory-app/` (semua layanan — frontend, API, proxy — ada di dalam satu container `web`).
+
+#### 4. Buat User Admin (Pertama Kali)
+
+```bash
+curl -X POST http://localhost:8081/inventory-app/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password": "***","full_name":"Administrator","role":"admin"}'
+```
+
+#### 5. Deploy di Balik Reverse Proxy (opsional, untuk domain)
+
+Jika VM sudah punya nginx + SSL, arahkan sub-path ke container web:
+
+```nginx
+location /inventory-app/ {
+    proxy_pass http://127.0.0.1:8081/inventory-app/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+> 💡 `BASE_PATH` di `.env` menentukan URL prefix. Untuk deploy di root domain (tanpa sub-path), set `BASE_PATH=/` dan `proxy_pass http://127.0.0.1:8081/;`
+
+#### 6. Backup & Restore Database
+
+```bash
+# Backup
+docker compose exec db pg_dump -U inventory inventory > backup.sql
+# atau: podman exec inventory-db pg_dump -U inventory inventory > backup.sql
+
+# Restore
+cat backup.sql | docker compose exec -T db psql -U inventory inventory
+```
+
 #### 2. Build & Jalankan dengan Docker Compose
 
 ```bash
