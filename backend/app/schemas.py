@@ -89,3 +89,41 @@ class OpnameScan(BaseModel):
     qr_data: str
     actual_stock: float
     note: Optional[str] = None
+
+
+# ===== Kasir / Penjualan =====
+class SaleItemCreate(BaseModel):
+    item_id: int
+    quantity: float
+
+class SaleCreate(BaseModel):
+    items: List[SaleItemCreate]
+    discount: float = 0.0
+    payment_amount: float = 0.0
+    note: Optional[str] = None
+
+class SaleItemOut(BaseModel):
+    id: int
+    item_id: int
+    item_name: Optional[str] = None
+    item_sku: Optional[str] = None
+    quantity: float
+    unit_price: float
+    subtotal: float
+    class Config:
+        from_attributes = True
+
+class SaleOut(BaseModel):
+    id: int
+    sale_number: str
+    total_amount: float
+    discount: float
+    grand_total: float
+    payment_amount: float
+    change_amount: float
+    note: Optional[str]
+    created_by: Optional[int]
+    created_at: datetime
+    items: List[SaleItemOut] = []
+    class Config:
+        from_attributes = True

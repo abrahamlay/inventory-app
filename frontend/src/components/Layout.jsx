@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { LogOut, Package, QrCode, Home } from 'lucide-react'
+import { LogOut, Package, QrCode, Home, ShoppingCart } from 'lucide-react'
 
 export default function Layout() {
   const navigate = useNavigate()
@@ -27,6 +27,10 @@ export default function Layout() {
               <Link to="/opname" className="flex items-center gap-2 text-gray-900 hover:text-blue-600">
                 <QrCode className="w-5 h-5" />
                 <span className="font-medium">Opname</span>
+              </Link>
+              <Link to="/kasir" className="flex items-center gap-2 text-gray-900 hover:text-blue-600">
+                <ShoppingCart className="w-5 h-5" />
+                <span className="font-medium">Kasir</span>
               </Link>
             </div>
             <button

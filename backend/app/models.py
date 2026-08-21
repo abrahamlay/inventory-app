@@ -54,3 +54,33 @@ class StockMutation(Base):
 
     item = relationship("Item", back_populates="mutations")
     user = relationship("User")
+
+
+class Sale(Base):
+    __tablename__ = "sales"
+    id = Column(Integer, primary_key=True, index=True)
+    sale_number = Column(String(30), unique=True, index=True, nullable=False)
+    total_amount = Column(Float, nullable=False, default=0.0)
+    discount = Column(Float, default=0.0)
+    grand_total = Column(Float, nullable=False, default=0.0)
+    payment_amount = Column(Float, default=0.0)
+    change_amount = Column(Float, default=0.0)
+    note = Column(Text)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    items = relationship("SaleItem", back_populates="sale")
+    user = relationship("User")
+
+
+class SaleItem(Base):
+    __tablename__ = "sale_items"
+    id = Column(Integer, primary_key=True, index=True)
+    sale_id = Column(Integer, ForeignKey("sales.id"), nullable=False)
+    item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
+    quantity = Column(Float, nullable=False)
+    unit_price = Column(Float, nullable=False)
+    subtotal = Column(Float, nullable=False)
+
+    sale = relationship("Sale", back_populates="items")
+    item = relationship("Item")

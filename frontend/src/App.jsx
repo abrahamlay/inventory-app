@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Items from './pages/Items'
 import Opname from './pages/Opname'
+import Kasir from './pages/Kasir'
 import Layout from './components/Layout'
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="items" element={<Items />} />
           <Route path="opname" element={<Opname />} />
+          <Route path="kasir" element={<Kasir />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
       </Routes>
