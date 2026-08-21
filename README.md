@@ -31,14 +31,48 @@ Aplikasi web untuk membantu stock opname dan operasional toko kelontong dengan d
 
 ## 🔧 Instalasi & Menjalankan
 
-### 1. Clone Repository
+### 🚀 Cara Termudah (Cross-Platform)
+
+Kami menyediakan script instalasi otomatis untuk berbagai sistem operasi:
+
+#### Linux / macOS
+```bash
+git clone https://github.com/abrahamlay/inventory-app.git
+cd inventory-app
+chmod +x install.sh
+./install.sh
+```
+
+#### Windows (PowerShell)
+```powershell
+git clone https://github.com/abrahamlay/inventory-app.git
+cd inventory-app
+.\install.ps1
+```
+
+Script ini akan:
+- Mengecek Docker/Podman yang terinstal
+- Membuat file `.env` jika belum ada
+- Build & jalankan semua container
+- Membuat user admin (opsional)
+
+#### Non-Interaktif (CI/CD)
+```bash
+./setup.sh admin password123 "Administrator"
+```
+
+---
+
+### 📦 Instalasi Manual (Docker Compose)
+
+#### 1. Clone Repository
 
 ```bash
-git clone https://github.com/username/inventory-app.git
+git clone https://github.com/abrahamlay/inventory-app.git
 cd inventory-app
 ```
 
-### 2. Build & Jalankan dengan Docker Compose
+#### 2. Build & Jalankan dengan Docker Compose
 
 ```bash
 # Dengan docker-compose
