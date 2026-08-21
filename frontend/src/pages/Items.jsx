@@ -7,6 +7,10 @@ export default function Items() {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ name: '', category: '', unit: 'pcs', price: 0, min_stock: 0, sku: '', qr_data: '' })
   const [search, setSearch] = useState('')
+  const [qrModal, setQrModal] = useState(null)
+  const [qrImage, setQrImage] = useState('')
+  const [qrLoading, setQrLoading] = useState(false)
+  const [qrError, setQrError] = useState('')
 
   const fetchItems = async () => {
     try {
@@ -51,6 +55,57 @@ export default function Items() {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const openQrModal = async (item) => {
+    setQrModal(item)
+    setQrImage('')
+    setQrError('')
+    setQrLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${import.meta.env.BASE_URL}api/items/qr-image/${item.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Gagal memuat QR')
+      const data = await res.json()
+      setQrImage(data.qr_image)
+    } catch (err) {
+      setQrError(err.message)
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  const closeQrModal = () => {
+    setQrModal(null)
+    setQrImage('')
+    setQrError('')
+  }
+
+  const downloadQr = () => {
+    if (!qrImage || !qrModal) return
+    const a = document.createElement('a')
+    a.href = qrImage
+    a.download = `qr-${qrModal.sku}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+
+  const printQr = () => {
+    if (!qrImage || !qrModal) return
+    const w = window.open('', '_blank')
+    if (!w) return
+    w.document.write(
+      `<html><head><title>Label QR ${qrModal.sku}</title></head>` +
+      `<body style="text-align:center;font-family:sans-serif;padding-top:40px">` +
+      `<img src="${qrImage}" style="width:260px;height:260px"/><br/>` +
+      `<p style="margin-top:8px">${qrModal.name}<br/><b>${qrModal.sku}</b></p>` +
+      `<script>window.onload=function(){window.print()}</script>` +
+      `</body></html>`
+    )
+    w.document.close()
   }
 
   const filtered = items.filter(i =>
@@ -104,7 +159,13 @@ export default function Items() {
                 <td className="px-4 py-3 text-sm font-medium">{item.stock}</td>
                 <td className="px-4 py-3 text-sm">Rp {item.price.toLocaleString()}</td>
                 <td className="px-4 py-3 text-sm">
-                  <QrCode className="w-5 h-5 text-gray-500" />
+                  <button
+                    onClick={() => openQrModal(item)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Lihat QR Code"
+                  >
+                    <QrCode className="w-5 h-5" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -198,6 +259,45 @@ export default function Items() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal QR Code */}
+      {qrModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeQrModal}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-1">QR Code Barang</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              {qrModal.name} — <span className="font-mono">{qrModal.sku}</span>
+            </p>
+            {qrLoading ? (
+              <div className="py-10 text-gray-500">Memuat QR...</div>
+            ) : qrImage ? (
+              <img src={qrImage} alt={`QR ${qrModal.sku}`} className="w-56 h-56 mx-auto mb-3 border rounded-lg" />
+            ) : (
+              <div className="py-10 text-red-500">{qrError || 'Gagal memuat QR'}</div>
+            )}
+            <p className="text-xs text-gray-400 mb-4 break-all">Isi QR: {qrModal.qr_data}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={downloadQr}
+                disabled={!qrImage}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                Download
+              </button>
+              <button
+                onClick={printQr}
+                disabled={!qrImage}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                Cetak
+              </button>
+              <button onClick={closeQrModal} className="flex-1 bg-gray-200 py-2 rounded-lg hover:bg-gray-300">
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}
